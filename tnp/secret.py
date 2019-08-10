@@ -1,6 +1,4 @@
 import re
-from uuid import uuid4
-
 from invoke import Collection, task
 
 from .env import get_bucket_uri, get_project_option
@@ -38,23 +36,18 @@ def get_kms_option():
 def upload_data(c, key, data, prefix):
     assert re.match('[A-Z0-9]+', key), 'key only accepts A-Z, 0-9, _'
 
-    plain = '/tmp/' + str(uuid4())
-    cipher = '/tmp/' + str(uuid4())
     bucket_uri = get_bucket_uri()
 
-    with open(plain, 'w') as f:
-        f.write(data)
-
     c.run(' '.join([
-        f'gcloud kms encrypt',
+        f'printf $DATA',
+        f'| gcloud kms encrypt',
         get_project_option(),
         get_kms_option(),
-        f'--plaintext-file={plain}',
+        f'--plaintext-file=-',
         f'--ciphertext-file=-',
-        f'| base64 -w 0 > {cipher}',
-        f'&& gsutil cp {cipher} {bucket_uri}/{SECRETS}/{prefix}/{key}',
-        f'&& rm {plain} {cipher}',
-    ]), echo=True)
+        f'| base64 -w 0',
+        f'| gsutil cp - {bucket_uri}/{SECRETS}/{prefix}/{key}',
+    ]), echo=True, env={'DATA': data})
 
 
 def download_data(c, key, prefix):
@@ -91,7 +84,7 @@ def get_env(c, key):
 
 @task
 def get_file(c, key):
-    data = download_data(c, key, ENV)
+    data = download_data(c, key, FILE)
     c.run(f'echo {data} | base64 -d', echo=False)
 
 
