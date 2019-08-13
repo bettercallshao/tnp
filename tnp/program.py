@@ -1,9 +1,9 @@
 from invoke import Collection, Program
 
-from . import secret, spec, version
+from . import pipe, secret, version
 
 ns = Collection()
 ns.add_collection(secret.ns, 'secret')
-ns.add_collection(spec.ns, 'spec')
+ns.add_collection(pipe.ns, 'pipe')
 
 program = Program(namespace=ns, version=version)

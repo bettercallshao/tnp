@@ -1,10 +1,29 @@
 import yaml
-from invoke import Collection, task
-
+from invoke import task
 
 SPEC_PATH = 'tnp.yaml'
 DEFAULT_SPEC = """
-m: 4
+name: echo
+cloudbuild: |
+  timeout: 600s
+  options:
+    machineType: N1_STARDARD_1
+  steps:
+  - name: gcr.io/$PROJECT_ID/echo
+    env:
+    - ECHO_PARAM={{ ECHO_PARAM }}
+    - ECHO_SECRET_FILE_PATH=secret.txt
+    secretEnv:
+    - ECHO_SECRET_ENV
+parameters:
+  secret_env:
+  - key: ECHO_SECRET_ENV
+  secret_file:
+  - key: ECHO_SECRET_FILE
+    path: secret.txt
+  template:
+  - key: ECHO_PARAM
+    value: default_template_i_am
 """
 
 COMPOSE_PATH = 'docker-compose.yaml'
@@ -16,7 +35,9 @@ services:
     build:
       context: echo
     environment:
-    - PARAM=this is echo from tnp!
+    - ECHO_PARAM=this is echo param
+    - ECHO_SECRET_ENV=this is echo secret env
+    - ECHO_SECRET_FILE=main.py
 """
 
 ECHO_DOCKER = """
@@ -40,8 +61,16 @@ import os
 def main():
     data = requests.get(
         'https://registry.hub.docker.com/v1/repositories/python/tags').content
+    print('Data:')
     print(pd.read_json(data).describe())
-    print(os.getenv('PARAM'))
+    print('ECHO_PARAM: {}'.format(os.getenv('ECHO_PARAM')))
+    print('ECHO_SECRET_ENV: {}'.format(os.getenv('ECHO_SECRET_ENV')))
+
+    secret_file = os.getenv('ECHO_SECRET_FILE')
+    print('ECHO_SECRET_FILE: {}'.format(secret_file))
+    if secret_file:
+        with open(secret_file) as f:
+            print(f.read())
 
 
 if __name__ == '__main__':
@@ -72,7 +101,3 @@ def init(c):
     file_from_str(ECHO_DOCKER, 'echo/Dockerfile')
     file_from_str(ECHO_MAIN, 'echo/main.py')
     file_from_str(ECHO_REQUIREMENTS, 'echo/requirements.txt')
-
-
-ns = Collection()
-ns.add_task(init)
