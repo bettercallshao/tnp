@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 from invoke import Collection, Program
 
 from . import pipe, secret, version

@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 import yaml
 from invoke import task
 
@@ -6,8 +7,6 @@ DEFAULT_SPEC = """
 name: echo
 cloudbuild: |
   timeout: 600s
-  options:
-    machineType: N1_STARDARD_1
   steps:
   - name: gcr.io/$PROJECT_ID/echo
     env:
@@ -37,7 +36,7 @@ services:
     environment:
     - ECHO_PARAM=this is echo param
     - ECHO_SECRET_ENV=this is echo secret env
-    - ECHO_SECRET_FILE=main.py
+    - ECHO_SECRET_FILE_PATH=main.py
 """
 
 ECHO_DOCKER = """
@@ -50,7 +49,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "main.py"]
+CMD ["python", "/work/main.py"]
 """
 ECHO_MAIN = """
 import pandas as pd
@@ -66,8 +65,8 @@ def main():
     print('ECHO_PARAM: {}'.format(os.getenv('ECHO_PARAM')))
     print('ECHO_SECRET_ENV: {}'.format(os.getenv('ECHO_SECRET_ENV')))
 
-    secret_file = os.getenv('ECHO_SECRET_FILE')
-    print('ECHO_SECRET_FILE: {}'.format(secret_file))
+    secret_file = os.getenv('ECHO_SECRET_FILE_PATH')
+    print('ECHO_SECRET_FILE_PATH: {}'.format(secret_file))
     if secret_file:
         with open(secret_file) as f:
             print(f.read())

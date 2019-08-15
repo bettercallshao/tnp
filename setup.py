@@ -16,9 +16,16 @@ setup(
     url='https://github.com/timlyrics/tnp',
     license='MIT',
     packages=['tnp'],
-    include_package_data=True,
-    zip_safe=False,
     entry_points={
         'console_scripts': ['tnp=tnp.program:program.run'],
     },
+    install_requires=[
+        'python-dotenv',
+        'future-fstrings',
+        'invoke',
+        'jinja2',
+        'pyyaml',
+    ],
+    include_package_data=True,
+    zip_safe=False,
 )

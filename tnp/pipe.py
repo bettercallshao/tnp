@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 import os
 from uuid import uuid4
 
@@ -14,7 +15,10 @@ SECRET_ENV = 'secret_env'
 SECRET_FILE = 'secret_file'
 TEMPLATE = 'template'
 SPEC_PATH = 'tnp.yaml'
-PIPES_URI = get_bucket_uri() + '/pipes'
+
+
+def get_pipes_uri():
+    return get_bucket_uri() + '/pipes'
 
 
 def get_spec():
@@ -26,7 +30,7 @@ def step_from_file(key, path):
     return {
         'name': 'hydiant/tnp',
         'args': [
-            'file-from-env',
+            'secret.file-from-env',
             key,
             path,
         ],
@@ -47,12 +51,14 @@ def secrets_from_dict(d):
 def deploy(c):
     spec = get_spec()
     name = spec['name']
-    c.run(f'gsutil cp {SPEC_PATH} {PIPES_URI}/{name}')
+    pipes_uri = get_pipes_uri()
+    c.run(f'gsutil cp {SPEC_PATH} {pipes_uri}/{name}')
 
 
 @task
 def ls(c):
-    c.run(f'gsutil ls {PIPES_URI}')
+    pipes_uri = get_pipes_uri()
+    c.run(f'gsutil ls {pipes_uri}')
 
 
 @task
@@ -99,7 +105,8 @@ def run_spec(c, spec, input_params):
 
 @task(iterable=['param'])
 def run(c, name, param):
-    res = c.run(f'gsutil cat {PIPES_URI}/{name}', hide='stdout')
+    pipes_uri = get_pipes_uri()
+    res = c.run(f'gsutil cat {pipes_uri}/{name}', hide='stdout')
     spec = yaml.load(res.stdout)
     run_spec(c, spec, param)
 

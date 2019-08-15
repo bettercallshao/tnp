@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 import re
 
 from invoke import Collection, task
@@ -7,7 +8,10 @@ from .env import get_bucket_uri, get_project, get_project_option
 KEYRING = KEY = 'tnp'
 ENV = 'env'
 FILE = 'file'
-SECRETS_URI = get_bucket_uri() + '/secrets'
+
+
+def get_secrets_uri():
+    return get_bucket_uri() + '/secrets'
 
 
 def get_kms_uri():
@@ -43,6 +47,7 @@ def get_kms_option():
 def upload_data(c, key, data, prefix):
     assert re.match('[A-Z0-9]+', key), 'key only accepts A-Z, 0-9, _'
 
+    secrets_uri = get_secrets_uri()
     c.run(' '.join([
         f'printf $DATA',
         f'| gcloud kms encrypt',
@@ -51,13 +56,14 @@ def upload_data(c, key, data, prefix):
         f'--plaintext-file=-',
         f'--ciphertext-file=-',
         f'| base64 -w 0',
-        f'| gsutil cp - {SECRETS_URI}/{prefix}/{key}',
+        f'| gsutil cp - {secrets_uri}/{prefix}/{key}',
     ]), env={'DATA': data})
 
 
 def download_data(c, key, prefix):
+    secrets_uri = get_secrets_uri()
     res = c.run(' '.join([
-        f'gsutil cat {SECRETS_URI}/{prefix}/{key}',
+        f'gsutil cat {secrets_uri}/{prefix}/{key}',
         f'| base64 -d',
         f'| gcloud kms decrypt',
         get_project_option(),
@@ -69,8 +75,9 @@ def download_data(c, key, prefix):
 
 
 def download_enc(c, key, prefix):
+    secrets_uri = get_secrets_uri()
     res = c.run(
-        f'gsutil cat {SECRETS_URI}/{prefix}/{key}',
+        f'gsutil cat {secrets_uri}/{prefix}/{key}',
         hide='stdout')
     return res.stdout
 
@@ -109,7 +116,8 @@ def get_file(c, key):
 
 @task
 def ls(c):
-    c.run(f'gsutil ls {SECRETS_URI}/**')
+    secrets_uri = get_secrets_uri()
+    c.run(f'gsutil ls {secrets_uri}/**')
 
 
 @task
