@@ -1,6 +1,9 @@
+# -*- coding: future_fstrings -*-
 import os
 
-keys = {'project', 'bucket'}
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def _from_env_key(key):
@@ -11,16 +14,13 @@ def _from_env_key(key):
     return val
 
 
-def get_env():
-    env = {}
-    for key in keys:
-        env[key] = _from_env_key(key)
-    return env
+def get_project():
+    return _from_env_key('project')
 
 
 def get_project_option():
-    return '--project {}'.format(get_env()['project'])
+    return '--project {}'.format(get_project())
 
 
 def get_bucket_uri():
-    return 'gs://{}'.format(get_env()['bucket'])
+    return 'gs://{}'.format(_from_env_key('bucket'))

@@ -1,0 +1,12 @@
+version: '3'
+services:
+  tnp:
+    image: 'hydiant/tnp:latest'
+    build: .
+    environment:
+    - TNP_PROJECT=${TNP_PROJECT}
+    - TNP_BUCKET=${TNP_BUCKET}
+    command:
+    - pipe.ls
+    volumes:
+    - ~/.config/gcloud:/root/.config/gcloud
