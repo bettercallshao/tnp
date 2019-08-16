@@ -5,6 +5,7 @@ from invoke import task
 SPEC_PATH = 'tnp.yaml'
 DEFAULT_SPEC = """
 name: echo
+cron: "* 1 * * *"
 cloudbuild: |
   timeout: 600s
   steps:
