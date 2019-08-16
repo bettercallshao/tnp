@@ -6,7 +6,7 @@ import yaml
 from invoke import Collection, task
 from jinja2 import Template
 
-from .env import get_bucket_uri, get_project, get_project_option
+from .env import get_bucket_uri, get_project_option, get_service_account
 from .init import init
 from .secret import get_enc_env, get_enc_file, get_kms_uri
 from .server import url as server_url
@@ -50,6 +50,8 @@ def secrets_from_dict(d):
 
 @task
 def deploy(c):
+    """Deploy pipe defined in current directory"""
+
     spec = get_spec()
     name = spec['name']
     pipes_uri = get_pipes_uri()
@@ -58,21 +60,24 @@ def deploy(c):
     cron = spec.get('cron')
     if cron:
         base = server_url(c)
-        project = get_project()
-        command = ' '.join([
-            f'gcloud scheduler jobs update http {name}',
-            get_project_option(),
-            f'--schedule="{cron}"',
-            f'--uri={base}/{name}',
-            f'--http-method=POST',
-            f'--oidc-service-account-email',
-            f'{project}@appspot.gserviceaccount.com',
-        ])
-        c.run(command + ' || ' + command.replace('update', 'create'))
+        sa = get_service_account()
+
+        def command(action):
+            return ' '.join([
+                f'gcloud scheduler jobs {action} http {name}',
+                get_project_option(),
+                f'--schedule="{cron}"',
+                f'--uri={base}/{name}',
+                f'--http-method=POST',
+                f'--oidc-service-account-email={sa}',
+            ])
+        c.run(command('update') + ' || ' + command('create'))
 
 
 @task
 def ls(c):
+    """List pipes deployed on remote"""
+
     pipes_uri = get_pipes_uri()
     c.run(f'gsutil ls {pipes_uri}')
     c.run(' '.join([
@@ -81,8 +86,10 @@ def ls(c):
     ]))
 
 
-@task
+@task(help={'name': 'Name of deployed pipe'})
 def status(c, name):
+    """Show status of a deployed pipe"""
+
     c.run(' '.join([
         f'gcloud builds list --filter=tags:{name}',
         get_project_option(),
@@ -124,16 +131,23 @@ def run_spec(c, spec, input_params):
     return res
 
 
-@task(iterable=['param'])
+@task(iterable=['param'],
+      help={'name': 'Name of deployed pipe',
+            'param': 'Input parameters, e.g. YEAR=2019'})
 def run(c, name, param):
+    """Run a deployed pipe with parameters"""
+
     pipes_uri = get_pipes_uri()
     res = c.run(f'gsutil cat {pipes_uri}/{name}', hide='stdout')
     spec = yaml.load(res.stdout)
     return run_spec(c, spec, param)
 
 
-@task(iterable=['param'])
+@task(iterable=['param'],
+      help={'param': 'Input parameters, e.g. YEAR=2019'})
 def run_local(c, param):
+    """Run the pipe defined in current directory with parameters"""
+
     spec = get_spec()
     return run_spec(c, spec, param)
 

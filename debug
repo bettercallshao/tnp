@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
+import sys
 
 from tnp.program import program
 
-program.run()
+if len(sys.argv) > 1:
+    program.run()
+else:
+    program.serve()

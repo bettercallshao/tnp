@@ -22,6 +22,8 @@ def get_kms_uri():
 
 @task
 def create_kms(c):
+    """Create a predefined KMS for pipes"""
+
     c.run(' '.join([
         f'gcloud kms keyrings create {KEYRING}',
         get_project_option(),
@@ -90,38 +92,53 @@ def get_enc_file(c, key):
     return download_enc(c, key, FILE)
 
 
-@task
+@task(help={'key': 'Variable name of the environment variable',
+            'data': 'Content of the environment variable'})
 def set_env(c, key, data):
+    """Set a secret environment variable"""
+
     upload_data(c, key, data, ENV)
 
 
-@task
+@task(help={'key': 'Identifier of the secret file',
+            'path': 'Path of the file to use as secret'})
 def set_file(c, key, path):
+    """Set a secret file"""
+
     res = c.run(f'cat {path} | base64 -w 0', hide='stdout')
     data = res.stdout.strip()
 
     upload_data(c, key, data, FILE)
 
 
-@task
+@task(help={'key': 'Variable name of the environment variable'})
 def get_env(c, key):
+    """Get (print) a secret environment variable"""
+
     print(download_data(c, key, ENV))
 
 
-@task
+@task(help={'key': 'Identifier of the secret file'})
 def get_file(c, key):
+    """Get (print) a secret file"""
+
     data = download_data(c, key, FILE)
     c.run(f'printf $DATA | base64 -d', env={'DATA': data})
 
 
 @task
 def ls(c):
+    """List secrets uploaded on remote"""
+
     secrets_uri = get_secrets_uri()
     c.run(f'gsutil ls {secrets_uri}/**')
 
 
-@task
+@task(help={'key': 'Identifier of the secret file',
+            'path': 'Output path of secret file'})
 def file_from_env(c, key, path):
+    """[INTERNAL] Convert a environment variable to a file"""
+
     c.run(f'printf ${key} | base64 -d > {path}')
 
 

@@ -1,5 +1,6 @@
 # -*- coding: future_fstrings -*-
-from invoke import Collection, Program
+from invoke import Collection
+from qinvoke import Program
 
 from . import pipe, secret, server, version
 

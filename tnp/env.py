@@ -42,3 +42,7 @@ def get_set_vars_arg():
 
 def get_tag():
     return 'gcr.io/{}/tnp'.format(get_project())
+
+
+def get_service_account():
+    return '{}@appspot.gserviceaccount.com'.format(get_project())
