@@ -7,6 +7,8 @@ services:
     - TNP_PROJECT=${TNP_PROJECT}
     - TNP_BUCKET=${TNP_BUCKET}
     command:
-    - pipe.ls
+    - server.up
+    ports:
+    - 8080:8080
     volumes:
     - ~/.config/gcloud:/root/.config/gcloud

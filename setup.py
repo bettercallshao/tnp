@@ -21,6 +21,7 @@ setup(
     },
     install_requires=[
         'python-dotenv',
+        'flask',
         'future-fstrings',
         'invoke',
         'jinja2',

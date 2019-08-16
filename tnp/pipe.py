@@ -6,9 +6,10 @@ import yaml
 from invoke import Collection, task
 from jinja2 import Template
 
-from .env import get_bucket_uri, get_project_option
+from .env import get_bucket_uri, get_project, get_project_option
 from .init import init
 from .secret import get_enc_env, get_enc_file, get_kms_uri
+from .server import url as server_url
 
 PARAMETERS = 'parameters'
 SECRET_ENV = 'secret_env'
@@ -54,11 +55,30 @@ def deploy(c):
     pipes_uri = get_pipes_uri()
     c.run(f'gsutil cp {SPEC_PATH} {pipes_uri}/{name}')
 
+    cron = spec.get('cron')
+    if cron:
+        base = server_url(c)
+        project = get_project()
+        command = ' '.join([
+            f'gcloud scheduler jobs update http {name}',
+            get_project_option(),
+            f'--schedule="{cron}"',
+            f'--uri={base}/{name}',
+            f'--http-method=POST',
+            f'--oidc-service-account-email',
+            f'{project}@appspot.gserviceaccount.com',
+        ])
+        c.run(command + ' || ' + command.replace('update', 'create'))
+
 
 @task
 def ls(c):
     pipes_uri = get_pipes_uri()
     c.run(f'gsutil ls {pipes_uri}')
+    c.run(' '.join([
+        f'gcloud scheduler jobs list',
+        get_project_option(),
+    ]))
 
 
 @task
@@ -96,11 +116,12 @@ def run_spec(c, spec, input_params):
     path = '/tmp/' + str(uuid4())
     with open(path, 'w') as f:
         yaml.dump(cloudbuild, f)
-    c.run(' '.join([
+    res = c.run(' '.join([
         f'gcloud builds submit --no-source --async --config {path}',
         get_project_option(),
     ]))
     os.remove(path)
+    return res
 
 
 @task(iterable=['param'])
@@ -108,13 +129,13 @@ def run(c, name, param):
     pipes_uri = get_pipes_uri()
     res = c.run(f'gsutil cat {pipes_uri}/{name}', hide='stdout')
     spec = yaml.load(res.stdout)
-    run_spec(c, spec, param)
+    return run_spec(c, spec, param)
 
 
 @task(iterable=['param'])
 def run_local(c, param):
     spec = get_spec()
-    run_spec(c, spec, param)
+    return run_spec(c, spec, param)
 
 
 ns = Collection(init, deploy, run, run_local, ls, status)

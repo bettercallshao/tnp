@@ -8,3 +8,4 @@ WORKDIR /tnp
 COPY . .
 RUN pip3 install .
 ENTRYPOINT ["tnp"]
+CMD ["server.up"]
