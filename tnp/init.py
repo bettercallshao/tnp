@@ -94,6 +94,8 @@ def dict_from_file(path):
 
 @task
 def init(c):
+    """Initialize a pipe with a sample echo app"""
+
     file_from_str(DEFAULT_SPEC, SPEC_PATH)
     file_from_str(DEFAULT_COMPOSE, COMPOSE_PATH)
 
